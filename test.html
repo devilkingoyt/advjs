@@ -1,0 +1,422 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced JavaScript Mastery</title>
+<style>
+    * { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; box-sizing: border-box;  }
+  :root {
+    --primary: #f59e0b; /* Switched to JS Yellow */
+    --primary-hover: #d97706;
+    --bg-color: #0f172a;
+    --card-bg: #1e293b;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --border-color: #334155;
+    --success: #10b981;
+    --error: #f43f5e;
+    --accent: #fcd34d;
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg-color);
+    color: var(--text-main);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+
+  .quiz-container {
+    width: 100%;
+    max-width: 750px;
+    background: var(--card-bg);
+    padding: 2.5rem;
+    border-radius: 20px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--border-color);
+    box-sizing: border-box;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    color: var(--primary);
+  }
+
+  .timer-box {
+    background: rgba(245, 158, 11, 0.1);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-variant-numeric: tabular-nums;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+  }
+
+  .progress-bar-wrap {
+    width: 100%;
+    height: 8px;
+    background: #090d16;
+    border-radius: 10px;
+    margin-bottom: 2.5rem;
+    overflow: hidden;
+  }
+
+  #progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    border-radius: 10px;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .flashcard { display: none; animation: fadeIn 0.4s ease; }
+  .flashcard.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .question-text {
+    font-size: 1.25rem;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+    font-weight: 500;
+  }
+
+  .options-list { display: grid; gap: 14px; }
+
+  .option-label {
+    padding: 16px;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    position: relative;
+    font-family: 'Courier New', Courier, monospace; /* Good for code snippets */
+    font-size: 0.95rem;
+  }
+
+  .option-label:hover { 
+    background: rgba(255,255,255,0.02); 
+    border-color: var(--text-muted);
+  }
+  
+  .option-label.selected { 
+    border-color: var(--primary); 
+    background: rgba(245, 158, 11, 0.08); 
+  }
+
+  input[type="radio"] { 
+    margin-right: 15px; 
+    transform: scale(1.2); 
+    accent-color: var(--primary);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .nav-btns { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 15px; 
+    margin-top: 2.5rem; 
+  }
+
+  button {
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+  }
+
+  button:active { transform: scale(0.98); }
+
+  .btn-sec { background: var(--border-color); color: var(--text-main); }
+  .btn-sec:hover { background: #475569; }
+  .btn-pri { background: var(--primary); color: #0f172a; }
+  .btn-pri:hover { background: var(--primary-hover); }
+  
+  .btn-submit { 
+    background: linear-gradient(135deg, var(--success), #059669); 
+    color: white; 
+    margin-top: 1.5rem; 
+    width: 100%; 
+    display: none; 
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+  }
+
+  /* Results Section */
+  #results-screen { display: none; }
+  
+  .results-header-box {
+    text-align: center;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .review-container {
+    max-height: 50vh;
+    overflow-y: auto;
+    margin-top: 1.5rem;
+    padding-right: 8px;
+  }
+  
+  .review-container::-webkit-scrollbar { width: 6px; }
+  .review-container::-webkit-scrollbar-track { background: transparent; }
+  .review-container::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+
+  .review-card {
+    background: #0f172a;
+    padding: 18px;
+    border-radius: 12px;
+    margin-top: 15px;
+    border-left: 5px solid var(--error);
+  }
+  .review-card.correct-card { border-left-color: var(--success); }
+  .review-card p { margin: 6px 0; font-size: 0.95rem; font-family: 'Courier New', Courier, monospace; }
+  
+  .wrong-txt { color: var(--error); font-weight: 600; }
+  .correct-txt { color: var(--success); font-weight: 600; }
+  .skipped-txt { color: #eab308; font-weight: 600; }
+
+</style>
+</head>
+<body>
+
+<div class="quiz-container" id="quiz-box">
+  <div class="header">
+    <span>Question <span id="q-num">1</span> / 25</span>
+    <span id="timer" class="timer-box">20:00</span>
+  </div>
+  <div class="progress-bar-wrap"><div id="progress-fill"></div></div>
+
+  <div id="card-anchor"></div>
+
+  <div class="nav-btns">
+    <button class="btn-sec" onclick="changeQ(-1)" id="prev-btn">Previous</button>
+    <button class="btn-pri" onclick="changeQ(1)" id="next-btn">Next / Skip</button>
+  </div>
+  <button id="final-btn" class="btn-submit" onclick="processResults()">Finish &amp; Reveal Mistakes</button>
+</div>
+
+<div class="quiz-container" id="results-screen">
+  <div class="results-header-box">
+    <h2>Performance Summary</h2>
+    <div id="final-score" style="font-size: 3rem; font-weight: 700; color: var(--primary); margin: 0.5rem 0;"></div>
+    <div id="completion-time" style="color: var(--text-muted); font-size: 0.9rem;"></div>
+  </div>
+  
+  <div class="review-container">
+    <h3 style="color: var(--text-muted); font-size: 1.1rem;">Review Session</h3>
+    <div id="mistake-list"></div>
+  </div>
+  
+  <button class="btn-pri" style="width: 100%; margin-top: 2rem; background: linear-gradient(135deg, var(--primary), var(--accent)); color: #0f172a;" onclick="location.reload()">Try 25 New Questions</button>
+</div>
+
+<script>
+// Pool of Advanced JS Questions
+const masterPool = [
+  { q: "What keyword is used to define a class in JavaScript?", o: ["object", "function", "class", "define"], a: 2 },
+  { q: "How does the constructor method help in JavaScript classes?", o: ["It defines a static method", "It initializes object properties when a class instance is created", "It removes an object's properties", "It is used to inherit methods from another class"], a: 1 },
+  { q: "Which of the following best describes the role of 'this' in a JavaScript class?", o: ["Refers to the current instance of a class", "Refers to the parent class only", "Refers to a static property", "Refers to an external module"], a: 0 },
+  { q: "Which JavaScript method converts a Map into a plain object?", o: ["Object.toMap()", "Object.entries()", "Object.fromEntries()", "Object.assign()"], a: 2 },
+  { q: "What is the default depth for flattening an array using Array.flat()?", o: ["1", "2", "Infinity", "0"], a: 0 },
+  { q: "What role does the call stack play in JavaScript's event loop?", o: ["Stores function calls in execution order", "Handles background API requests", "Manages asynchronous tasks only", "Queues microtasks for execution"], a: 0 },
+  { q: "Which JavaScript feature allows executing tasks asynchronously without blocking the main thread?", o: ["Promises", "Web APIs", "Event Loop", "All of the above"], a: 3 },
+  { q: "What does the super keyword do in JavaScript?", o: ["Calls the constructor or methods of a parent class", "Enables access properties from the parent class", "Creates a deep copy of an object", "Prevents method overriding in child classes"], a: 0 },
+  { q: "How do static methods differ from regular class methods in JavaScript?", o: ["They can be accessed without creating an instance of the class", "They can only be used in child classes", "They modify private fields directly", "They cannot access or modify instance properties or methods"], a: 0 },
+  { q: "What does the Object.fromEntries() method do in JavaScript?", o: ["Converts an object into a Map", "Converts a Map into a plain object", "Takes an iterable of key-value pairs and returns a new object", "Creates an object with default values"], a: 2 },
+  { q: "How does the ternary operator improve JavaScript code readability?", o: ["By reducing if-else blocks into a single line", "Can reduce the number of code lines", "By handling null values automatically", "By allowing multiple conditions"], a: 0 },
+  { q: "Which of the following statements are true with respect to dynamic import improving performance in JavaScript applications? (a) By loading JavaScript modules only when required (b) By bundling all modules together (c) Useful for large applications (d) By removing dependencies from JavaScript code", o: ["a and b", "a and c", "b and d", "a and d"], a: 1 },
+  { q: "filter() method is used for ________, ____________, and _______.", o: ["Enabling data manipulation and transformation", "Selecting users whose active property is true", "Working with nested data gets simpler", "Mapping structures get difficult"], a: 0 },
+  { q: "In an API response, which JavaScript feature ensures missing values are handled gracefully?", o: ["switch statements", "Optional Chaining and Nullish Coalescing", "Regular Expressions", "String Manipulation"], a: 1 },
+  { q: "What does Object-Oriented Programming (OOP) help achieve in JavaScript?", o: ["Faster execution speed", "Structuring code using objects and classes", "Eliminating the requirement for functions", "Running JavaScript without a browser"], a: 1 },
+  { q: "Create a function to count numbers between two given numbers.", o: ["function count_between(f_no,s_no) { return(Math.abs(f_no-s_no); } console.log(count_between(10,30));", "function count_between(f_no,s_no) { return(Math.abs(f_no-s_no)); } console.log(count_between(10,30));", "function count_between(f_no,s_no){ return(abs(f_no-s_no)); } console.log(count_between(10,30));", "function count_between(f_no,s_no) return(Math.abs(f_no-s_no)); console.log(count_between(10,30));"], a: 1 },
+  { q: "Which tab allows verification of values of variables?", o: ["Script Tab", "Debugger Tab", "Multi Line Mode Tab", "Style Editor Tab"], a: 1 },
+  { q: "What is the purpose of using an API?", o: ["To retain functional code quality while reducing the size", "To help import a complex functionality into a code", "To compile and transcode JavaScript", "To check form values and send alerts to the browser"], a: 1 },
+  { q: "What type of API provides an improved user experience and performance?", o: ["Simple Object Access Protocol API", "Representational State Transfer API", "Remote Procedure Call API", "Responsive API"], a: 1 },
+  { q: "Which are the commonly used methods used to fetch the content of an HTML element?", o: ["document.getElementById getElementsByTagName", "JSON.parse() document.removeChild(element)", "document.createElement(element) element.style.property = new style", "element.setAttribute(attribute, value) getElementsByTagName"], a: 0 },
+  { q: "Which of the following essential JavaScript features does Web workers do not have access to?", o: ["1) Window object 2) Document object 3) Parent object 4) DOM", "1) Application Cache 2) XMLHttpRequest 3) setTimeout() 4) Navigator object", "1) Window object 2) Document object 3) Parent object 4) Navigator object", "1) Location object 2) Application Cache 3) importScripts() 4) Navigator object"], a: 0 },
+  { q: "________ or ______________ JavaScript decreases the load time of a Web page resulting in a better user experience.", o: ["Blocking or Compiling", "Compiling or Running", "Grouping or Concatenating", "Grouping or Merging"], a: 2 },
+  { q: "What does an object consist of?", o: ["A state and behavior", "Control statements", "A simple and user friendly language", "A Web application"], a: 0 },
+  { q: "Which of the following keywords is used to create an object?", o: ["object", "New", "new", "class"], a: 2 },
+  { q: "_______________________ data type is used in a script wherever required to perform a task repeatedly.", o: ["Booleans", "Functions", "Strings", "Objects"], a: 1 },
+  { q: "What is the feature of a variable?", o: ["A variable must be declared before using it.", "A variable requires an application to process requests.", "A variable is used to download embedded scripts.", "A variable is simple and user friendly."], a: 0 },
+  { q: "Which among these predefined properties does RegExp have?", o: ["Pattern only", "Matcher and Madrid", "Pattern and Matcher", "Pattern and Madrid"], a: 2 },
+  { q: "What has 'name:value' and is separated by a comma?", o: ["RegExp", "Object Literal", "Madrid", "Metacharacters"], a: 1 },
+  { q: "What function performs case insensitive and global searches in RegExp?", o: ["Brackets", "Metacharacters", "Quantifiers", "Modifiers"], a: 3 },
+  { q: "Which metacharacter searches for a form feed character?", o: ["\\f", "\\o", "\\b", "\\t"], a: 0 },
+  { q: "Which of these co-ordinates any string that contain zero or more occurrences of n?", o: ["n*", "n?", "n+", "?!n"], a: 0 },
+  { q: "Which of these is the correct code to create a class with attributes year of language, creator of that language?", o: ["function language(year, name) { this.year=year; this.creator=name; } var Visual_Basic = new language(1991,\"Alan Cooper\"); var Eiffel = new language(1983,\"Anders Hejlsberg\"); console.log(Visual", "function language(year, name) { year=year; creator=name; } ... console.log(Visual_Basic.cre", "function Language(year, name) { this.year=year; this.creator=name; } ... console.log(creato", "function (year) { this.year=year; this.creator=name; } ... console.log(Visual_Basic.creator)"], a: 0 },
+  { q: "Why is modularization important in large JavaScript applications?", o: ["It helps separate concerns and improve maintainability", "It increases execution speed", "It prevents the use of ES6+ features", "Easier debugging and maintenance"], a: 0 },
+  { q: "What is the purpose of the getter method in JavaScript classes?", o: ["Provides direct write access to properties", "Creates a new property dynamically", "Converts an object to a string", "Retrieves the value of a property without calling it like a function"], a: 3 },
+  { q: "How does extends support inheritance in JavaScript classes?", o: ["It allows a class to inherit properties and methods from another class", "It prevents child classes from modifying properties", "It forces a class to implement all methods of another class", "It converts a function into a class"], a: 0 },
+  { q: "Which JavaScript feature allows quick extraction of values from objects and arrays?", o: ["Optional Chaining", "Destructuring", "Nullish Coalescing", "Spread Operator"], a: 1 },
+  { q: "What does the test() method return when a regular expression finds a match?", o: ["A boolean value", "The matched string", "An array of results", "Undefined"], a: 0 },
+  { q: "Which symbol in a regular expression matches any single character except a newline?", o: ["*", "^", ".", "$"], a: 2 },
+  { q: "In a switch statement, what happens if the break statement is omitted from a case block?", o: ["The program exits the switch immediately", "The next case executes regardless of match", "The program throws an error", "The first case is always executed"], a: 1 },
+  { q: "What are the advantages of using private fields in JavaScript classes?", o: ["They prevent external code from modifying class properties directly", "They make all class methods static", "Setters allow data validation and getters hide internal representation", "They enable dynamic imports in JavaScript"], a: 0 },
+  { q: "How does CommonJS differ from ES Modules in JavaScript?", o: ["CommonJS uses require(), while ES Modules use import", "CommonJS allows only one export per file", "ES Modules cannot be used in Node.js", "CommonJS runs only in browsers"], a: 0 },
+  { q: "What problems do circular dependencies cause in JavaScript modules?", o: ["They create infinite loops and initialization issues", "They lead to errors that are difficult to debug", "They allow multiple inheritance", "They force all modules to load at once"], a: 0 },
+  { q: "What is the purpose of the optional chaining (?.) operator in JavaScript?", o: ["To assign default values when a variable is falsy", "To safely access nested properties without causing errors", "To flatten nested arrays", "To replace null values with defaults"], a: 1 }
+];
+
+// Randomize and extract exactly 25 questions for the flashcard queue
+const sessionSize = 25;
+function getSessionQuestions() {
+  return [...masterPool].sort(() => Math.random() - 0.5).slice(0, sessionSize);
+}
+
+const sessionQuestions = getSessionQuestions();
+let currentIdx = 0;
+let answers = new Array(sessionSize).fill(null);
+let totalTimeAllocated = 1200; // 20 Minutes
+let time = totalTimeAllocated;
+let timerInterval = null;
+
+function init() {
+  const anchor = document.getElementById('card-anchor');
+  sessionQuestions.forEach((q, i) => {
+    const card = document.createElement('div');
+    card.className = `flashcard ${i === 0 ? 'active' : ''}`;
+    card.id = `card-${i}`;
+    
+    const opts = q.o.map((opt, j) => `
+      <label class="option-label" id="L-${i}-${j}">
+        <input type="radio" name="q${i}" value="${j}" onclick="handleSel(${i}, ${j})">
+        ${escapeHtml(opt)}
+      </label>
+    `).join('');
+
+    card.innerHTML = `<div class="question-text">${i+1}. ${escapeHtml(q.q)}</div><div class="options-list">${opts}</div>`;
+    anchor.appendChild(card);
+  });
+  updateUI();
+  startTimer();
+  setupKeyboardNavigation();
+}
+
+function handleSel(qI, oI) {
+  answers[qI] = oI;
+  document.querySelectorAll(`#card-${qI} .option-label`).forEach(l => l.classList.remove('selected'));
+  document.getElementById(`L-${qI}-${oI}`).classList.add('selected');
+  
+  // Set the native radio button as checked explicitly to prevent state loss when navigating backward
+  document.querySelector(`#card-${qI} input[value="${oI}"]`).checked = true;
+
+  setTimeout(() => {
+    if(currentIdx < sessionSize - 1) changeQ(1);
+  }, 250);
+}
+
+function changeQ(step) {
+  const next = currentIdx + step;
+  if (next >= 0 && next < sessionSize) {
+    document.getElementById(`card-${currentIdx}`).classList.remove('active');
+    currentIdx = next;
+    document.getElementById(`card-${currentIdx}`).classList.add('active');
+    updateUI();
+  }
+}
+
+function updateUI() {
+  document.getElementById('q-num').innerText = currentIdx + 1;
+  document.getElementById('progress-fill').style.width = `${((currentIdx + 1) / sessionSize) * 100}%`;
+  
+  document.getElementById('prev-btn').style.visibility = (currentIdx === 0) ? 'hidden' : 'visible';
+  document.getElementById('next-btn').innerText = (currentIdx === sessionSize - 1) ? 'Review End' : 'Next / Skip';
+  if (answers.includes(null) === false || currentIdx === sessionSize - 1) {
+     document.getElementById('final-btn').style.display = 'block';
+  }
+}
+
+function startTimer() {
+  const tEl = document.getElementById('timer');
+  timerInterval = setInterval(() => {
+    let m = Math.floor(time / 60);
+    let s = time % 60;
+    tEl.innerText = `${m}:${s < 10 ? '0'+s : s}`;
+    if (time <= 0) { 
+      clearInterval(timerInterval); 
+      processResults(); 
+    }
+    time--;
+  }, 1000);
+}
+
+function processResults() {
+  clearInterval(timerInterval);
+  document.getElementById('quiz-box').style.display = 'none';
+  document.getElementById('results-screen').style.display = 'block';
+  
+  let score = 0;
+  const list = document.getElementById('mistake-list');
+  list.innerHTML = "";
+
+  const elapsedTotal = totalTimeAllocated - time;
+  const elapsedMin = Math.floor(elapsedTotal / 60);
+  const elapsedSec = elapsedTotal % 60;
+  document.getElementById('completion-time').innerText = `Completed in ${elapsedMin}m ${elapsedSec}s`;
+
+  sessionQuestions.forEach((q, i) => {
+    const isCorrect = answers[i] === q.a;
+    const skipped = answers[i] === null;
+    if (isCorrect) score++;
+
+    const div = document.createElement('div');
+    div.className = `review-card ${isCorrect ? 'correct-card' : ''}`;
+    
+    let pickText = skipped ? '<span class="skipped-txt">SKIPPED</span>' : (isCorrect ? `<span class="correct-txt">${escapeHtml(q.o[answers[i]])}</span>` : `<span class="wrong-txt">${escapeHtml(q.o[answers[i]])}</span>`);
+    
+    div.innerHTML = `
+      <p><strong>Q${i+1}: ${escapeHtml(q.q)}</strong></p>
+      <p>Your Selection: ${pickText}</p>
+      ${!isCorrect ? `<p>Correct Answer: <span class="correct-txt">${escapeHtml(q.o[q.a])}</span></p>` : ''}
+    `;
+    list.appendChild(div);
+  });
+
+  document.getElementById('final-score').innerText = `${score} / ${sessionSize}`;
+}
+
+function setupKeyboardNavigation() {
+  document.addEventListener('keydown', (e) => {
+    if (document.getElementById('quiz-box').style.display === 'none') return;
+    if (e.key === 'ArrowRight') changeQ(1);
+    if (e.key === 'ArrowLeft') changeQ(-1);
+    if (['1','2','3','4'].includes(e.key)) {
+      const optIdx = parseInt(e.key) - 1;
+      const options = document.querySelectorAll(`#card-${currentIdx} input[type="radio"]`);
+      if (options[optIdx]) {
+        options[optIdx].click();
+      }
+    }
+  });
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.innerText = text;
+  return div.innerHTML;
+}
+
+init();
+</script>
+</body>
+</html>
